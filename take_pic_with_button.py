@@ -1,45 +1,58 @@
 import RPi.GPIO as GPIO
 from picamera import PiCamera
+import datetime
+from PIL import Image
 import time
-from Tkinter import *
+import sys
 
 class KingOfTheHill():
-    time_displayed = 60
+    time_displayed = 5
 
     def __init__(self):
-        # set up button
-        GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
-        input_pin = 10
-        pin_off = GPIO.PUD_DOWN
-        GPIO.setup(input_pin, GPIO.IN, pull_up_down=pin_off)
-        GPIO.add_event_detect(input_pin, GPIO.RISING, callback=self.button_callback)
-
         # set up cammera
         self.camera = PiCamera()
         self.camera.start_preview()
 
-    def __del__(self):
-        GPIO.cleanup()
+    #def __del__(self):
+    #    GPIO.cleanup()
 
-    def button_callback(self, channel):
-        pic_file = "/that_harddrive_we_brought/winners_photos/probably_someone_getting_hurt_{}.jpg".format(time.now())
+    def button_callback(self):
+        pic_file = "probably_someone_getting_hurt_{}.png".format(datetime.datetime.now())
         self.camera.capture(pic_file)
-        display = self.display_image(pic_file)
-        self.camera.stop_preview()
-
-        time.sleep(self.time_displayed)
-        self.camera.start_preview()
-        display.destroy()
+        self.display_image(pic_file)
 
     def display_image(self, file):
-        root = Tk()
-        canvas = Canvas(root, width =1224,height=1000) # TODO: make fullscreen
-        pic = PhotoImage(file=file)
-        canvas.create_image(0, 0, image=pic)
-        root.mainloop()
-        return root
+        img = Image.open(file)
+        pad = Image.new('RGB', ( \
+            ((img.size[0] + 31) // 32) * 32, \
+            ((img.size[1] + 15) // 16) * 16, \
+            ))
+        # Paste the original image into the padded one
+        pad.paste(img, (0, 0))
+        o = self.camera.add_overlay(pad.tobytes(), size=img.size)
+        o.alpha = 255
+        o.layer = 3
+        self.camera.preview.alpha = 0
+        time.sleep(10)
+        
+        self.camera.preview.alpha = 255
+        self.camera.remove_overlay(o)
 
 if __name__ == '__main__':
-    hill = KingOfTheHill()
+    #hill = KingOfTheHill()
+    #line = sys.stdin.readline().strip()
+    #while line != "q":
+    #    hill.button_callback()
+    #    line = sys.stdin.readline().strip()
+    #time.sleep(5)
+
+
+    # set up button
+    GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
+    pin = 10
+    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     while True:
-        input("The blood of out enemies!\n\n")
+        if GPIO.input(pin) == GPIO.HIGH:
+            print GPIO.input(pin)
+
+        
