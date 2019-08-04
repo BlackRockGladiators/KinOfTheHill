@@ -3,21 +3,24 @@ from picamera import PiCamera
 import datetime
 from PIL import Image
 import time
-import sys
 
-class KingOfTheHill():
-    time_displayed = 5
+PIC_DIR = '/tmp/'
 
-    def __init__(self):
+class KingOfTheHill:
+    def __init__(self, input_pin):
         # set up cammera
         self.camera = PiCamera()
         self.camera.start_preview()
 
-    #def __del__(self):
-    #    GPIO.cleanup()
+        # set up button
+        GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
+        GPIO.setup(input_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+        GPIO.add_event_detect(input_pin, GPIO.RISING, callback=button_callback)
 
-    def button_callback(self):
-        pic_file = "probably_someone_getting_hurt_{}.png".format(datetime.datetime.now())
+        self.last_layer = None
+
+    def button_callback(self, channel):
+        pic_file = PIC_DIR + "probably_someone_getting_hurt_{}.png".format(datetime.datetime.now())
         self.camera.capture(pic_file)
         self.display_image(pic_file)
 
@@ -29,30 +32,19 @@ class KingOfTheHill():
             ))
         # Paste the original image into the padded one
         pad.paste(img, (0, 0))
+
         o = self.camera.add_overlay(pad.tobytes(), size=img.size)
         o.alpha = 255
         o.layer = 3
         self.camera.preview.alpha = 0
-        time.sleep(10)
-        
-        self.camera.preview.alpha = 255
-        self.camera.remove_overlay(o)
+        if self.last_layer:
+            self.camera.remove_overlay(self.last_layer)
+        self.last_layer = o
 
 if __name__ == '__main__':
-    #hill = KingOfTheHill()
-    #line = sys.stdin.readline().strip()
-    #while line != "q":
-    #    hill.button_callback()
-    #    line = sys.stdin.readline().strip()
-    #time.sleep(5)
+    hill = KingOfTheHill(10)
 
-
-    # set up button
-    GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
-    pin = 10
-    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     while True:
-        if GPIO.input(pin) == GPIO.HIGH:
-            print GPIO.input(pin)
+        # run until someone kills me
 
-        
+    GPIO.cleanup()
