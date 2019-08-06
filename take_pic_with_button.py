@@ -3,8 +3,9 @@ from picamera import PiCamera
 import datetime
 from PIL import Image
 import time
+import os
 
-PIC_DIR = ''
+PIC_DIR = '/tmp/kingofthehill/'
 
 class KingOfTheHill:
     def __init__(self, input_pin):
@@ -23,6 +24,8 @@ class KingOfTheHill:
 
     def picture(self):
         pic_file = PIC_DIR + "probably_someone_getting_hurt_{}.png".format(datetime.datetime.now())
+        if not os.path.exists(PIC_DIR):
+            os.mkdir(PIC_DIR)
         self.camera.capture(pic_file)
         self.display_image(pic_file)
 
@@ -45,7 +48,7 @@ class KingOfTheHill:
             self.camera.remove_overlay(self.last_layer)
         self.last_layer = o
 
-        time.sleep(5)
+        time.sleep(3)
 
     def button_pressed(self):
         return GPIO.input(self.input_pin) == GPIO.HIGH
