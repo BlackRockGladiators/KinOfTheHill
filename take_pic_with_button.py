@@ -48,7 +48,7 @@ class KingOfTheHill:
             self.camera.remove_overlay(self.last_layer)
         self.last_layer = o
 
-        time.sleep(3)
+        time.sleep(1)
 
     def button_pressed(self):
         return GPIO.input(self.input_pin) == GPIO.HIGH
